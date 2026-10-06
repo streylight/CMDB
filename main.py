@@ -1,32 +1,10 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from enum import Enum
 from datetime import datetime
 from enums import DeviceType, Status
+from schemas import DeviceResponse, DeviceCreate, Interface
 import uuid
 
-## Models
-class BaseDevice(BaseModel):
-    name: str
-    serial: str
-    device_type: DeviceType
-    rack: str
 
-class Device(BaseDevice):
-    id: uuid.UUID
-    status: Status = Status.PLANNED # default to planned
-    created_at: datetime
-    updated_at: datetime
-
-class DeviceCreate(BaseDevice):
-    pass
-
-class Interface(BaseModel):
-    id: uuid.UUID
-    device_id: uuid.UUID
-    name: str
-    mac: str
-    vlan_id: int | None = None
 
 app = FastAPI()
 
@@ -57,8 +35,8 @@ device_database = {
 async def root():
     return { "message": "goodbye world!"}
 
-@app.get("/devices/{device_id}", response_model=Device)
-async def get_device_by_id(device_id: uuid.UUID) -> Device:
+@app.get("/devices/{device_id}", response_model=DeviceResponse)
+async def get_device_by_id(device_id: uuid.UUID) -> DeviceResponse:
     if device_id in device_database:
         return device_database[device_id]
     else:
@@ -67,7 +45,7 @@ async def get_device_by_id(device_id: uuid.UUID) -> Device:
 @app.post("/devices/")
 async def create_device(device: DeviceCreate):
     ts = datetime.now()
-    new_device = Device(**device.model_dump(), id=uuid.uuid4(),created_at = ts, updated_at = ts)
+    new_device = DeviceResponse(**device.model_dump(), id=uuid.uuid4(),created_at = ts, updated_at = ts)
     device_database[new_device.id] = new_device
     return { "message:": "device created successfully!", "device:": device }
 
